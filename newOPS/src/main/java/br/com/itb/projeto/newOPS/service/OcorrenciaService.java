@@ -48,7 +48,7 @@ public class OcorrenciaService {
     public Ocorrencia save(Ocorrencia ocorrencia) {
 
         ocorrencia.setDataOcorrencia(LocalDateTime.now());
-        ocorrencia.setStatusOcorrencia("ABERTA");
+        ocorrencia.setStatusOcorrencia("PENDENTE");
 
         Ocorrencia _ocorrencia =  ocorrenciaRepository.save(ocorrencia);
         return _ocorrencia;
