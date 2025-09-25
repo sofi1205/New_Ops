@@ -103,4 +103,9 @@ public class OcorrenciaService {
 
         return ocorrenciaRepository.save(ocorrencia);  // Salva a ocorrência com o status atualizado
     }
+
+	public List<Ocorrencia> findByUsuarioId(Long id) {
+		 List<Ocorrencia> ocorrencias = ocorrenciaRepository.findByUsuarioId(id);
+		return ocorrencias;
+	}
 }

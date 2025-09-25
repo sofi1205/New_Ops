@@ -69,11 +69,8 @@ public class UsuarioController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Usuario usuario) {
-        String email = usuario.getEmail();
-        String rm = usuario.getRm();
-        String senha = usuario.getSenha();
-
-        Usuario _usuario = usuarioService._login(email, rm, senha);
+ 
+        Usuario _usuario = usuarioService._login(usuario.getEmail(), usuario.getRm(), usuario.getSenha());
 
         if (_usuario == null) {
             throw new ResourceNotFoundException("*** Dados Incorretos! ***");
