@@ -2,64 +2,60 @@ package br.com.itb.projeto.newOPS.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import br.com.itb.projeto.newOPS.model.entity.Localidade;
 import br.com.itb.projeto.newOPS.model.entity.Ocorrencia;
-import br.com.itb.projeto.newOPS.model.entity.Usuario;
-
 import br.com.itb.projeto.newOPS.model.repository.OcorrenciaRepository;
-import br.com.itb.projeto.newOPS.model.repository.UsuarioRepository;
-import br.com.itb.projeto.newOPS.model.repository.LocalidadeRepository;
-import jakarta.transaction.Transactional;
 
 @Service
 public class OcorrenciaService {
 
-    private OcorrenciaRepository ocorrenciaRepository;
-    private UsuarioRepository usuarioRepository;
-    private LocalidadeRepository localidadeRepository;
-    public OcorrenciaService(OcorrenciaRepository ocorrenciaRepository, UsuarioRepository usuarioRepository,
-                             LocalidadeRepository localidadeRepository) {
-        super();
+    private final OcorrenciaRepository ocorrenciaRepository;
+
+    public OcorrenciaService(OcorrenciaRepository ocorrenciaRepository) {
         this.ocorrenciaRepository = ocorrenciaRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.localidadeRepository = localidadeRepository;
     }
 
     public Ocorrencia findById(long id) {
-        Optional<Ocorrencia> ocorrencia = ocorrenciaRepository.findById(id);
-
-        if (ocorrencia.isPresent()) {
-            return ocorrencia.get();
-        }
-
-        return null;
+        return ocorrenciaRepository.findById(id).orElse(null);
     }
 
     public List<Ocorrencia> findAll(){
-        List<Ocorrencia> ocorrencia = ocorrenciaRepository.findAll();
-        return ocorrencia;
+        return ocorrenciaRepository.findAll();
+    }
+
+    public List<Ocorrencia> findPendentes() {
+        return ocorrenciaRepository.findAll().stream()
+                .filter(o -> {
+                    String status = o.getStatusOcorrencia();
+                    return status.equalsIgnoreCase("ABERTA") ||
+                           status.equalsIgnoreCase("PENDENTE") ||
+                           status.equalsIgnoreCase("ATRASO");
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<Ocorrencia> findByStatus(String status) {
+        return ocorrenciaRepository.findAll().stream()
+                .filter(o -> o.getStatusOcorrencia().equalsIgnoreCase(status))
+                .collect(Collectors.toList());
     }
 
     @Transactional
     public Ocorrencia save(Ocorrencia ocorrencia) {
-
         ocorrencia.setDataOcorrencia(LocalDateTime.now());
         ocorrencia.setStatusOcorrencia("PENDENTE");
-
-        Ocorrencia _ocorrencia =  ocorrenciaRepository.save(ocorrencia);
-        return _ocorrencia;
+        ocorrencia.setStatusOcorrencia("ABERTA");
+        return ocorrenciaRepository.save(ocorrencia);
     }
 
     @Transactional
     public Ocorrencia update(long id, Ocorrencia ocorrenciaDetails) {
         Ocorrencia ocorrencia = findById(id);
-        if (ocorrencia == null) {
-            throw new RuntimeException("Ocorrencia não encontrada com o ID: " + id);
-        }
+        if (ocorrencia == null) throw new RuntimeException("Ocorrencia não encontrada com o ID: " + id);
 
         ocorrencia.setDescricao(ocorrenciaDetails.getDescricao());
         ocorrencia.setStatusOcorrencia(ocorrenciaDetails.getStatusOcorrencia());
@@ -70,38 +66,38 @@ public class OcorrenciaService {
         return ocorrenciaRepository.save(ocorrencia);
     }
 
+    @Transactional
+    public Ocorrencia marcarComoSolucionada(long id) {
+        Ocorrencia ocorrencia = findById(id);
+        if (ocorrencia == null) throw new RuntimeException("Ocorrencia não encontrada com o ID: " + id);
 
-    public void deleteById(long id) {
-        if (ocorrenciaRepository.existsById(id)) {
-            ocorrenciaRepository.deleteById(id);
-        } else {
-            throw new RuntimeException("Ocorrencia não encontrada com o ID: " + id);
-        }
+        ocorrencia.setStatusOcorrencia("SOLUCIONADA");
+        return ocorrenciaRepository.save(ocorrencia);
     }
 
     @Transactional
     public Ocorrencia inativar(long id) {
         Ocorrencia ocorrencia = findById(id);
-        if (ocorrencia == null) {
-            throw new RuntimeException("Ocorrencia não encontrada com o ID: " + id);
-        }
-
+        if (ocorrencia == null) throw new RuntimeException("Ocorrencia não encontrada com o ID: " + id);
 
         ocorrencia.setStatusOcorrencia("INATIVA");
-
         return ocorrenciaRepository.save(ocorrencia);
     }
+
     @Transactional
     public Ocorrencia reativar(long id) {
         Ocorrencia ocorrencia = findById(id);
-        if (ocorrencia == null) {
+        if (ocorrencia == null) throw new RuntimeException("Ocorrencia não encontrada com o ID: " + id);
+
+        ocorrencia.setStatusOcorrencia("ATIVA");
+        return ocorrenciaRepository.save(ocorrencia);
+    }
+
+    public void deleteById(long id) {
+        if (!ocorrenciaRepository.existsById(id)) {
             throw new RuntimeException("Ocorrencia não encontrada com o ID: " + id);
         }
-
-        // Alterando o status para "Ativa"
-        ocorrencia.setStatusOcorrencia("ATIVA");
-
-        return ocorrenciaRepository.save(ocorrencia);  // Salva a ocorrência com o status atualizado
+        ocorrenciaRepository.deleteById(id);
     }
 
 	public List<Ocorrencia> findByUsuarioId(Long id) {
